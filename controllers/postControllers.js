@@ -4,7 +4,7 @@
 // require('linkifyjs/plugins/hashtag')(linkify);
 const Post = require('../models/post');
 const fs = require('fs')
-const User = require('../models/User');
+const User = require('../models/user');
 const Following = require('../models/Following');
 // const Notification = require('../models/Notification');
 // const socketHandler = require('../handlers/socketHandler');

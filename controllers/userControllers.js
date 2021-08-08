@@ -1,6 +1,6 @@
 const Followers = require('../models/Followers');
 const Following = require('../models/Following');
-const User = require('../models/User');
+const User = require('../models/user');
 const ProfileImg = require('../models/profileImg');
 
 module.exports.getusersFollowers = async (req, res, next) => {

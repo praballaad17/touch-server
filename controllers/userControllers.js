@@ -2,6 +2,7 @@ const Followers = require('../models/Followers');
 const Following = require('../models/Following');
 const User = require('../models/user');
 const ProfileImg = require('../models/profileImg');
+const { paginationResults } = require('../middleware/pagination');
 
 module.exports.getusersFollowers = async (req, res, next) => {
     try {
@@ -10,6 +11,47 @@ module.exports.getusersFollowers = async (req, res, next) => {
         res.send(followers)
     } catch (error) {
         res.send(error)
+    }
+}
+
+module.exports.searchUser = async (req, res) => {
+
+    const page = parseInt(req.query.page)
+    const limit = parseInt(req.query.limit)
+
+    const startIndex = (page - 1) * limit
+    const endIndex = page * limit
+    let results = [];
+    let imgs = [];
+
+    try {
+        await User.find({
+            $or: [
+                { username: { $regex: req.params.usernameOrname } },
+                { email: { $regex: req.params.usernameOrname } },
+                { fullName: { $regex: req.params.usernameOrname } }
+            ]
+        }).limit(limit).skip(startIndex).exec().then(async (res) => {
+            const usernameA = []
+
+            for (let i = 0; i < res.length; i++) {
+                usernameA.push(res[i].username)
+                results.push({ username: res[i].username, fullname: res[i].fullName })
+            }
+            await ProfileImg.find({
+                "user.username": { $in: usernameA }
+            }).then(ans => {
+                for (let i = 0; i < res.length; i++) {
+                    imgs.push({ profileImg: ans[i].displayImg.profileImg, username: ans[i].user.username })
+                }
+            })
+        })
+
+
+        let user = imgs.map((item, i) => Object.assign({}, item, results[i]))
+        return res.send(user)
+    } catch (error) {
+        return res.send(error)
     }
 }
 
@@ -33,7 +75,6 @@ module.exports.getusersFollowing = async (req, res, next) => {
 }
 
 module.exports.updateUnfollowRequest = async (req, res, next) => {
-    console.log(req.params.profileUserId, req.body.followingUserId);
     try {
         await Followers.findOneAndUpdate({ user: req.params.profileUserId }, {
             $pull: {
@@ -59,7 +100,6 @@ module.exports.getUserByUsername = async (req, res, next) => {
 }
 
 module.exports.updateFollowRequest = async (req, res, next) => {
-    console.log(req.params.profileUserId, req.body.followingUserId);
     try {
         await Followers.findOneAndUpdate({ user: req.params.profileUserId }, {
             $push: {

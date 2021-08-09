@@ -1,4 +1,4 @@
-module.exports.paginationResults = (model) => {
+module.exports.paginationResults = (model, query) => {
     return async (req, res, next) => {
         console.log(req.query.page, req.query.limit);
         const page = parseInt(req.query.page)
@@ -23,8 +23,9 @@ module.exports.paginationResults = (model) => {
             }
         }
         try {
-            results.results = await model.find().limit(limit).skip(startIndex).exec()
+            results.results = await model.find(query).limit(5).skip(1).exec()
             res.paginatedResults = results
+            console.log(results);
             next()
         } catch (e) {
             res.status(500).json({ message: e.message })

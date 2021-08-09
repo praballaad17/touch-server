@@ -42,6 +42,7 @@ module.exports.retrivePostByUserId = async (req, res, next) => {
 
 module.exports.getTimelinePosts = async (req, res, next) => {
     const { following } = await Following.findOne({ user: req.params.userId })
+    following.push({ _id: req.params.userId })
     const resultArray = following.map(async (item) => {
         const result = await User.findById(item._id)
         if (!result) {
@@ -88,6 +89,16 @@ module.exports.getUserPhotosByUsername = async (req, res, next) => {
         res.send(error)
     }
 }
+
+module.exports.deletePostById = async (req, res, next) => {
+    try {
+        await Post.findOneAndDelete({ _id: req.params.postId })
+        res.status(200).send("deleted")
+    } catch (error) {
+        res.send(error)
+    }
+}
+
 
 
 

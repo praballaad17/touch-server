@@ -10,9 +10,11 @@ const {
     removeProfileImg,
     getusersFollowing,
     updateFollowRequest,
-    updateUnfollowRequest
+    updateUnfollowRequest,
+    searchUser
 } = require('../controllers/userControllers');
 
+router.get('/search/:usernameOrname', searchUser)
 router.get('/display-imgs/:username', getUserDisplayImgs)
 router.get('/username/:usernameOrEmail', getUserByUsername)
 router.get('/username/followers/:username', getusersFollowers)

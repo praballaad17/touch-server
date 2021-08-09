@@ -58,7 +58,6 @@ const UserSchema = new Schema({
         default: false,
     },
 });
-
 UserSchema.pre('save', function (next) {
     const saltRounds = 10;
     // Check if the password has been modified

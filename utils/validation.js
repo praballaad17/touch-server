@@ -22,8 +22,8 @@ module.exports.validateUsername = (username) => {
     return 'Enter a valid username.';
   } else if (username.length > 30 || username.length < 3) {
     return 'Please choose a username between 3 and 30 characters.';
-  } else if (!username.match(/^[a-zA-Z0-9\_.]+$/)) {
-    return 'A username can only contain the following: letters A-Z, numbers 0-9 and the symbols _ . ';
+  } else if (!username.match(/^[a-z0-9\_.]+$/)) {
+    return 'A username can only contain the following: small letters (a-z), numbers 0-9 and the symbols _ . ';
   }
   return false;
 };

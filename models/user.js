@@ -83,7 +83,7 @@ UserSchema.pre('save', async function (res, req, next) {
             });
             if (document) {
                 const err = new Error('Username or email already register');
-                return next(err)
+                return res.status(400).send(err)
             }
             // await mongoose.model('Followers').create({ user: this._id });
             // await mongoose.model('Following').create({ user: this._id });

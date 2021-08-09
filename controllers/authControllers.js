@@ -141,6 +141,10 @@ module.exports.register = async (req, res, next) => {
     if (passwordError) return res.status(400).send({ error: passwordError });
 
     try {
+        const document = await User.findOne({
+            $or: [{ email: email }, { username: username }],
+        });
+        if (document) return res.status(400).send('Username or email already register')
         user = new User({ username, fullName, email, password });
         confirmationToken = new ConfirmationToken({
             user: user._id,
@@ -149,7 +153,7 @@ module.exports.register = async (req, res, next) => {
         const followers = new Followers({ user: user._id, followers: [] })
         const following = new Following({
             user: user._id, following: [
-                { _id: "610d4cf4d7bbe88c04c039a6" }
+                { _id: "61115fb24b64ee0022c2282d" }
             ]
         })
         const displayImg = await profileImg({

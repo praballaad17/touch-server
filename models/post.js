@@ -19,6 +19,13 @@ const PostSchema = new Schema({
         type: String,
         ref: 'User',
     },
+    paid: {
+        type: mongoose.Schema({
+            isPaid: Boolean,
+            price: Number,
+            hasPaid: Boolean
+        })
+    }
 });
 
 // PostSchema.pre('deleteOne', async function (next) {

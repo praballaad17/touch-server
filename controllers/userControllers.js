@@ -150,7 +150,6 @@ module.exports.removeProfileImg = async (req, res) => {
 
 module.exports.getUserDisplayImgs = async (req, res) => {
     const userProfile = await ProfileImg.findOne({ "user.username": req.params.username })
-    console.log(userProfile);
     if (!userProfile) return res.status(400).send("Document Not found check the user database")
 
     // const result = await ProfileImg.findOne({ "user.username": req.params.username })

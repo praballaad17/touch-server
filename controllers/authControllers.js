@@ -21,9 +21,7 @@ const {
 module.exports.verifyJwt = (token) => {
     return new Promise(async (resolve, reject) => {
         try {
-            console.log(token, jwt.decode(token, process.env.JWT_SECRET));
             const id = jwt.decode(token, process.env.JWT_SECRET).id;
-            console.log(id);
             const user = await User.findOne(
                 { _id: id },
                 'email username avatar bookmarks bio fullName confirmed website'

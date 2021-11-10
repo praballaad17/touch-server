@@ -15,9 +15,9 @@ module.exports.resize = (req, res) => {
             .png()
             .toBuffer()
             .then((data) => {
-                // const base64Data = data.toString('base64');
-                // res.status(202).json({ b64Data: base64Data, contentType: contentType, extension: 'png' });
-                return res.send(data);
+                const base64Data = 'data:image/png;base64, ' + data.toString('base64');
+                res.status(202).send(base64Data);
+                // return res.send(data);
             })
             .catch((err) => console.log(err));
     });

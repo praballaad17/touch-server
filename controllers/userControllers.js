@@ -93,10 +93,12 @@ module.exports.updateUnfollowRequest = async (req, res, next) => {
 }
 
 module.exports.getUserByUsername = async (req, res, next) => {
-    const user = await User.findOne({
-        $or: [{ email: req.params.usernameOrEmail }, { username: req.params.usernameOrEmail }],
-    }).select("-password");
-    res.send(user);
+    const { usernameOrEmail } = req.params
+    if (!usernameOrEmail) return res.status(400).send("No User")
+
+    const user = await User.findOne({ username: req.params.usernameOrEmail }).select("-password");
+    if (!user) return res.status(404).send("No user Found")
+    return res.status(200).send(user);
 }
 
 module.exports.updateFollowRequest = async (req, res, next) => {

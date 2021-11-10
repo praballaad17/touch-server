@@ -38,10 +38,10 @@ module.exports.verifyJwt = (token) => {
 };
 
 module.exports.requireAuth = async (req, res, next) => {
-    const { authorization } = req.headers;
-    if (!authorization) return res.status(401).send({ error: 'Not authorized.' });
+    const { token } = req.headers;
+    if (!token) return res.status(401).send({ error: 'Not authorized.' });
     try {
-        const user = await this.verifyJwt(authorization);
+        const user = await this.verifyJwt(token);
         // Allow other middlewares to access the authenticated user details.
         res.locals.user = user;
         return next();
@@ -65,19 +65,21 @@ module.exports.optionalAuth = async (req, res, next) => {
 };
 
 module.exports.loginAuthentication = async (req, res, next) => {
-    const { authorization } = req.headers;
+    // const { token } = req.headers;
     const { usernameOrEmail, password } = req.body;
-    if (authorization) {
-        try {
-            const user = await this.verifyJwt(authorization);
-            return res.send({
-                user,
-                token: authorization,
-            });
-        } catch (err) {
-            return res.status(401).send({ error: err });
-        }
-    }
+    // console.log(usernameOrEmail, password, token);
+    // if (token) {
+    //     try {
+    //         const user = await this.verifyJwt(token);
+    //         return res.send({
+    //             user,
+    //             token: token,
+    //         });
+    //     } catch (err) {
+    //         console.log(err);
+    //         return res.status(401).send({ error: err });
+    //     }
+    // }
 
     if (!usernameOrEmail || !password) {
         return res

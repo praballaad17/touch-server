@@ -3,6 +3,7 @@ const Schema = mongoose.Schema;
 
 const PostSchema = new Schema({
     files: Array,
+    fileNumber: Number,
     thumbnail: String,
     caption: String,
     hashtags: [

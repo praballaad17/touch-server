@@ -18,7 +18,7 @@ module.exports.postByUsername = async (req, res) => {
     let paidPost
     try {
         const post = new Post({
-            files: files, caption: caption, author: req.params.username, paid: {
+            files: files, fileNumber: files.length, caption: caption, author: req.params.username, paid: {
                 isPaid: paid,
                 price: price,
             }
@@ -29,7 +29,7 @@ module.exports.postByUsername = async (req, res) => {
         }
         await post.save();
 
-        res.status(201).send(post);
+        return res.status(201).json({ _id: post._id, fileNumber: post.fileNumber, caption, author: post.author });
     } catch (err) {
         console.log(err);
         res.status(400).send("unable to create post");
@@ -55,7 +55,7 @@ module.exports.retrivePostByUserId = async (req, res, next) => {
     }
 }
 
-module.exports.getTimelinePosts = async (req, res, next) => {
+module.exports.getTimelinePosts = async (req, res) => {
     const { following } = await Following.findOne({ user: req.params.userId })
     following.push({ _id: req.params.userId })
     const resultArray = following.map(async (item) => {
@@ -89,65 +89,68 @@ module.exports.getTimelinePosts = async (req, res, next) => {
         }
     }
     try {
-        const postArr = await Post.find({ author: { $in: followings } }).sort([['date', -1]]).limit(limit).skip(startIndex).exec()
-        for (let i = 0; i < postArr.length; i++) {
-            if (postArr[i].paid.isPaid) {
-                const paidPost = await PaidPost.findById(postArr[i]._id)
-                const paiduser = paidPost.paidUsers.filter(item => item == req.params.userId)
-                if (paiduser.length != 0) {
-                    posts[i] = { post: postArr[i], hasPaid: true }
-                }
-                else {
-                    posts[i] = { post: postArr[i], hasPaid: false }
-                }
-            }
-            else {
-                posts[i] = { post: postArr[i] }
-            }
+        const postArr = await Post.find({ author: { $in: followings } }, { files: 0 }).sort([['date', -1]]).limit(limit).skip(startIndex).exec()
+        // for (let i = 0; i < postArr.length; i++) {
+        //     if (postArr[i].paid.isPaid) {
+        //         const paidPost = await PaidPost.findById(postArr[i]._id)
+        //         const paiduser = paidPost.paidUsers.filter(item => item == req.params.userId)
+        //         if (paiduser.length != 0) {
+        //             posts[i] = { post: postArr[i], hasPaid: true }
+        //         }
+        //         else {
+        //             posts[i] = { post: postArr[i], hasPaid: false }
+        //         }
+        //     }
+        //     else {
+        //         posts[i] = { post: postArr[i] }
+        //     }
 
-        }
+        // }
+        results.result = postArr
+        res.send(results)
     }
     catch (e) {
         res.status(500).json({ message: e.message })
     }
-    results.result = posts
-    res.send(results)
-    // res.json(res.paginatedResults)
 }
 
+module.exports.getPostById = async (req, res) => {
+    const { postId } = req.params
+    const file = await Post.find({ _id: postId }, { files: 1 })
+    return res.send(file[0]?.files)
+}
 
 module.exports.getUserPhotosByUsername = async (req, res, next) => {
     const page = parseInt(req.query.page)
     const limit = parseInt(req.query.limit)
     const logginUserId = req.query.logginUserId
-    console.log(logginUserId);
     const startIndex = (page - 1) * limit
     const endIndex = page * limit
     let posts = []
     let results = {}
 
     try {
-        const post = await Post.find({ author: req.params.username }).sort([['date', -1]]).limit(limit).skip(startIndex).exec()
-        const user = await User.findOne({ username: req.params.username })
-        if (user._id == logginUserId) {
-            // console.log(post);
-            for (let i = 0; i < post.length; i++) {
-                posts[i] = { post: post[i], hasPaid: true }
-            }
+        const post = await Post.find({ author: req.params.username }, { files: 0 }).sort([['date', -1]]).limit(limit).skip(startIndex).exec()
+        // const user = await User.findOne({ username: req.params.username })
+        // if (user._id == logginUserId) {
+        //     // console.log(post);
+        //     for (let i = 0; i < post.length; i++) {
+        //         posts[i] = { post: post[i], hasPaid: true }
+        //     }
 
-        }
-        else {
-            for (let i = 0; i < post.length; i++) {
-                if (post[i].paid.isPaid) {
-                    const paidPost = await PaidPost.findById(post[i]._id)
-                    const paiduser = paidPost.paidUsers.filter(item => item == logginUserId)
-                    if (paiduser.length != 0) {
-                        posts[i] = { post: postArr[i], hasPaid: true }
-                    }
-                }
-            }
-        }
-        results.result = posts
+        // }
+        // else {
+        //     for (let i = 0; i < post.length; i++) {
+        //         if (post[i].paid.isPaid) {
+        //             const paidPost = await PaidPost.findById(post[i]._id)
+        //             const paiduser = paidPost.paidUsers.filter(item => item == logginUserId)
+        //             if (paiduser.length != 0) {
+        //                 posts[i] = { post: postArr[i], hasPaid: true }
+        //             }
+        //         }
+        //     }
+        // }
+        results.result = post
         return res.status(200).send(results)
     } catch (error) {
         return res.send(error)

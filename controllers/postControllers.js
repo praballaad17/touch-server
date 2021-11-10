@@ -128,28 +128,22 @@ module.exports.getUserPhotosByUsername = async (req, res, next) => {
     const endIndex = page * limit
     let posts = []
     let results = {}
+    if (endIndex < await Post.countDocuments().exec()) {
+        results.next = {
+            page: page + 1,
+            limit: limit
+        }
+    }
 
+    if (startIndex > 0) {
+        results.previous = {
+            page: page - 1,
+            limit: limit
+        }
+    }
     try {
         const post = await Post.find({ author: req.params.username }, { files: 0 }).sort([['date', -1]]).limit(limit).skip(startIndex).exec()
-        // const user = await User.findOne({ username: req.params.username })
-        // if (user._id == logginUserId) {
-        //     // console.log(post);
-        //     for (let i = 0; i < post.length; i++) {
-        //         posts[i] = { post: post[i], hasPaid: true }
-        //     }
 
-        // }
-        // else {
-        //     for (let i = 0; i < post.length; i++) {
-        //         if (post[i].paid.isPaid) {
-        //             const paidPost = await PaidPost.findById(post[i]._id)
-        //             const paiduser = paidPost.paidUsers.filter(item => item == logginUserId)
-        //             if (paiduser.length != 0) {
-        //                 posts[i] = { post: postArr[i], hasPaid: true }
-        //             }
-        //         }
-        //     }
-        // }
         results.result = post
         return res.status(200).send(results)
     } catch (error) {

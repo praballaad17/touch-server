@@ -14,22 +14,15 @@ const { post } = require('../routes/post');
 // const ObjectId = require('mongoose').Types.ObjectId;
 
 module.exports.postByUsername = async (req, res) => {
-    const { files, caption, paid, price } = req.body;
-    let paidPost
+    const { files, caption, postId, fileNames } = req.body;
     try {
         const post = new Post({
-            files: files, fileNumber: files.length, caption: caption, author: req.params.username, paid: {
-                isPaid: paid,
-                price: price,
-            }
+            _id: postId, files: files, fileNames: fileNames, fileNumber: files.length, caption: caption, author: req.params.username
         });
-        if (paid) {
-            paidPost = new PaidPost({ _id: post._id, author: req.params.username, price: price, paidUsers: [] })
-            await paidPost.save();
-        }
+
         await post.save();
 
-        return res.status(201).json({ _id: post._id, fileNumber: post.fileNumber, caption, author: post.author });
+        return res.status(201).json({ _id: post._id, fileNames: post.fileNames, fileNumber: post.fileNumber, caption, author: post.author });
     } catch (err) {
         console.log(err);
         res.status(400).send("unable to create post");
@@ -90,22 +83,7 @@ module.exports.getTimelinePosts = async (req, res) => {
     }
     try {
         const postArr = await Post.find({ author: { $in: followings } }, { files: 0 }).sort([['date', -1]]).limit(limit).skip(startIndex).exec()
-        // for (let i = 0; i < postArr.length; i++) {
-        //     if (postArr[i].paid.isPaid) {
-        //         const paidPost = await PaidPost.findById(postArr[i]._id)
-        //         const paiduser = paidPost.paidUsers.filter(item => item == req.params.userId)
-        //         if (paiduser.length != 0) {
-        //             posts[i] = { post: postArr[i], hasPaid: true }
-        //         }
-        //         else {
-        //             posts[i] = { post: postArr[i], hasPaid: false }
-        //         }
-        //     }
-        //     else {
-        //         posts[i] = { post: postArr[i] }
-        //     }
 
-        // }
         results.result = postArr
         res.send(results)
     }

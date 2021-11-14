@@ -3,8 +3,8 @@ const mongoose = require("mongoose");
 const crypto = require("crypto");
 // const path = require("path");
 // const auth = require("../middleware/auth");
-// const mongoURI = process.env.MONGOURI;
-const mongoURI = "mongodb://localhost:27017/Touch";
+const mongoURI = process.env.MONGOURI;
+// const mongoURI = "mongodb://localhost:27017/Touch";
 
 function mongofunction(app) {
 

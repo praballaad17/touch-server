@@ -12,7 +12,7 @@ require("./startups/cors")(app);
 const server = http.createServer(app);
 const io = socketio(server, {
     cors: {
-        origin: "https://thetouchapp.herokuapp.com",
+        origin: ["http://localhost:3000", "https://thetouchapp.herokuapp.com"],
         methods: ["GET", "POST"],
     }
 })

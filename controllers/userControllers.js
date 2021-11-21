@@ -36,7 +36,7 @@ module.exports.searchUser = async (req, res) => {
 
             for (let i = 0; i < res.length; i++) {
                 usernameA.push(res[i].username)
-                results.push({ username: res[i].username, fullname: res[i].fullName })
+                results.push({ _id: res[i]._id, username: res[i].username, fullName: res[i].fullName })
             }
             await ProfileImg.find({
                 "user.username": { $in: usernameA }
@@ -63,6 +63,71 @@ module.exports.getusersFollowersById = async (req, res, next) => {
         res.send(error)
     }
 }
+/**** socket functions ******/
+module.exports.getFollowersById = async (userId) => {
+    try {
+        const { followers } = await Followers.findOne({ user: userId })
+        return followers
+    } catch (error) {
+        return error
+    }
+}
+
+module.exports.getFollowingById = async (userId) => {
+    try {
+        const { following } = await Following.findOne({ user: userId })
+        return following
+    } catch (error) {
+        return error
+    }
+}
+
+module.exports.getUserByUsername = async (username) => {
+    if (!username) return "No User"
+
+    const user = await User.findOne({ username: username }).select("-password");
+    if (!user) return Error("No user Found")
+    return user;
+}
+
+module.exports.getFollowersByusername = async (username) => {
+    try {
+        const user = await User.findOne({ username: username }).select("-password");
+        if (!user) return "No user Found"
+        const { followers } = await Followers.findOne({ user: user._id })
+        return followers
+    } catch (error) {
+        return error
+    }
+}
+
+module.exports.getFollowersByusername = async (username) => {
+    try {
+        const user = await User.findOne({ username: username }).select("-password");
+        if (!user) return "No user Found"
+        const { following } = await Following.findOne({ user: user._id })
+        return following
+    } catch (error) {
+        return error
+    }
+}
+
+module.exports.UserDisplayImgsById = async (userId) => {
+    const displayImg = await ProfileImg.findOne({ "user._id": userId })
+    if (!displayImg) return res.status(400).send("Document Not found check the user database")
+
+    // const result = await ProfileImg.findOne({ "user.username": req.params.username })
+    return displayImg
+}
+
+module.exports.UserDisplayImgsByUsername = async (username) => {
+    const displayImg = await ProfileImg.findOne({ "user.username": username })
+    if (!displayImg) return Error("Document Not found check the user database")
+
+    return displayImg
+}
+
+/****************************************************************************** */
 
 module.exports.getusersFollowing = async (req, res, next) => {
     try {
@@ -73,6 +138,8 @@ module.exports.getusersFollowing = async (req, res, next) => {
         res.send(error)
     }
 }
+
+
 
 module.exports.updateUnfollowRequest = async (req, res, next) => {
     try {
@@ -92,14 +159,7 @@ module.exports.updateUnfollowRequest = async (req, res, next) => {
     }
 }
 
-module.exports.getUserByUsername = async (req, res, next) => {
-    const { usernameOrEmail } = req.params
-    if (!usernameOrEmail) return res.status(400).send("No User")
 
-    const user = await User.findOne({ username: req.params.usernameOrEmail }).select("-password");
-    if (!user) return res.status(404).send("No user Found")
-    return res.status(200).send(user);
-}
 
 module.exports.updateFollowRequest = async (req, res, next) => {
     try {
@@ -157,3 +217,5 @@ module.exports.getUserDisplayImgs = async (req, res) => {
     // const result = await ProfileImg.findOne({ "user.username": req.params.username })
     return res.status(200).send(userProfile)
 }
+
+

@@ -7,13 +7,11 @@ const {
     retrivePostByUsername,
     getUserPhotosByUsername,
     retrivePostByUserId,
-    getTimelinePosts,
     deletePostById,
     getPostById
 } = require('../controllers/postControllers');
 const Post = require("../models/post");
 
-router.get('/all-posts/:userId', requireAuth, getTimelinePosts);
 router.get('/posts/:postId', requireAuth, getPostById);
 router.post('/:username', requireAuth, postByUsername);
 router.get('/userId/:userId', requireAuth, requireAuth, retrivePostByUserId);

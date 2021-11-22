@@ -153,7 +153,7 @@ module.exports.register = async (req, res, next) => {
         const followers = new Followers({ user: user._id, followers: [] })
         const following = new Following({
             user: user._id, following: [
-                { _id: "61115fb24b64ee0022c2282d" }
+                { _id: "619b52b3af4aa90023635dea" }
             ]
         })
         const displayImg = await profileImg({

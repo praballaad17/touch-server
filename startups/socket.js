@@ -73,14 +73,15 @@ module.exports = function (io) {
             })
         })
 
-        socket.on('send-message', async ({ members, text, groupId, date }) => {
-            const recipients = members.filter(m => m != id)
+        socket.on('send-message', async ({ membersId, text, groupId, date }) => {
+            const recipients = membersId.filter(m => m != id)
+
             await updateMessage(text, groupId, date, id)
             recipients.forEach(recipient => {
                 const newRecipients = recipients.filter(r => r !== recipient)
                 newRecipients.push(id)
                 socket.broadcast.to(recipient).emit('receive-message', {
-                    members, sender: id, text, date, groupId
+                    membersId, sender: id, text, date, groupId
                 })
             })
 

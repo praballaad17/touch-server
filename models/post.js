@@ -7,6 +7,7 @@ const PostSchema = new Schema({
     fileNumber: Number,
     fileNames: Array,
     caption: String,
+    comments: Array,
     hashtags: [
         {
             type: String,

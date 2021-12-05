@@ -6,21 +6,7 @@ const PaidPost = require('../models/paidPost');
 const { post } = require('../routes/post');
 
 
-module.exports.postByUsername = async (req, res) => {
-    const { files, caption, postId, fileNames } = req.body;
-    try {
-        const post = new Post({
-            _id: postId, files: files, fileNames: fileNames, fileNumber: files.length, caption: caption, author: req.params.username
-        });
 
-        await post.save();
-
-        return res.status(201).json({ _id: post._id, files, fileNames: post.fileNames, fileNumber: post.fileNumber, caption, author: post.author });
-    } catch (err) {
-        console.log(err);
-        res.status(400).send("unable to create post");
-    }
-}
 
 module.exports.retrivePostByUsername = async (req, res, next) => {
     try {
@@ -42,6 +28,20 @@ module.exports.retrivePostByUserId = async (req, res, next) => {
 }
 
 /****socket **************************************************************/
+module.exports.postByUsername = async (files, fileNames, postId, caption, username) => {
+    try {
+        const post = new Post({
+            _id: postId, files: files, fileNames: fileNames, fileNumber: files.length, caption: caption, author: username
+            , comments: []
+        });
+
+        await post.save();
+        return post
+    } catch (err) {
+        console.log(err);
+        return "unable to create post"
+    }
+}
 module.exports.getTimelinePost = async (id, pageNumber, limit) => {
     const { following } = await Following.findOne({ user: id })
     following.push({ _id: id })
@@ -107,8 +107,8 @@ module.exports.getUserPost = async (username, pageNumber, limit) => {
 /********************************************************************* */
 module.exports.getPostById = async (req, res) => {
     const { postId } = req.params
-    const file = await Post.find({ _id: postId }, { files: 1 })
-    return res.send(file[0]?.files)
+    const file = await Post.findOne({ _id: postId })
+    return res.send(file)
 }
 
 module.exports.getUserPhotosByUsername = async (req, res, next) => {

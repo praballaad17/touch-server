@@ -26,7 +26,7 @@ require("./startups/socket")(io)
 app.use("/api/auth", auth);
 app.use("/api/post", post);
 app.use("/api/user", user);
-app.use("/api/resize", resize);
+app.use("/api", resize);
 
 
 

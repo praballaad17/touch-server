@@ -14,6 +14,18 @@ module.exports.getusersFollowers = async (req, res, next) => {
     }
 }
 
+module.exports.getUserByUsername = async (req, res) => {
+    if (!req.params.usernameOrEmail) return "No User"
+
+    const user = await User.findOne({ username: req.params.usernameOrEmail }).select("-password");
+    if (!user) return res.status(400).send("No user Found")
+    const { _id, fullName, username, private } = user
+    const { displayImg } = await ProfileImg.findOne({ "user.username": req.params.usernameOrEmail })
+    const { followers } = await Followers.findOne({ user: user._id })
+    const { following } = await Following.findOne({ user: user._id })
+    return res.status(200).send({ _id, fullName, username, private, displayImg, followers, following });
+}
+
 module.exports.searchUser = async (req, res) => {
 
     const page = parseInt(req.query.page)
@@ -63,6 +75,7 @@ module.exports.getusersFollowersById = async (req, res, next) => {
         res.send(error)
     }
 }
+
 /**** socket functions ******/
 module.exports.getFollowersById = async (userId) => {
     try {
@@ -82,7 +95,7 @@ module.exports.getFollowingById = async (userId) => {
     }
 }
 
-module.exports.getUserByUsername = async (username) => {
+module.exports.getUserByUsernameSocket = async (username) => {
     if (!username) return "No User"
 
     const user = await User.findOne({ username: username }).select("-password");
@@ -101,7 +114,7 @@ module.exports.getFollowersByusername = async (username) => {
     }
 }
 
-module.exports.getFollowersByusername = async (username) => {
+module.exports.getFollowingByusername = async (username) => {
     try {
         const user = await User.findOne({ username: username }).select("-password");
         if (!user) return "No user Found"
@@ -127,6 +140,42 @@ module.exports.UserDisplayImgsByUsername = async (username) => {
     return displayImg
 }
 
+module.exports.updateUnfollowRequest = async (profileUserId, followingUserId) => {
+    try {
+        await Followers.findOneAndUpdate({ user: profileUserId }, {
+            $pull: {
+                followers: { _id: followingUserId }
+            }
+        })
+        await Following.findOneAndUpdate({ user: followingUserId }, {
+            $pull: {
+                following: { _id: profileUserId }
+            }
+        })
+        return "unfollowed"
+    } catch (error) {
+        return error
+    }
+}
+
+module.exports.updateFollowRequest = async (profileUserId, followingUserId) => {
+    try {
+        await Followers.findOneAndUpdate({ user: profileUserId }, {
+            $push: {
+                followers: [{ _id: followingUserId }]
+            }
+        })
+        await Following.findOneAndUpdate({ user: followingUserId }, {
+            $push: {
+                following: [{ _id: profileUserId }]
+            }
+        })
+        return "followed"
+    } catch (error) {
+        return error
+    }
+}
+
 /****************************************************************************** */
 
 module.exports.getusersFollowing = async (req, res, next) => {
@@ -136,46 +185,6 @@ module.exports.getusersFollowing = async (req, res, next) => {
         res.send(following)
     } catch (error) {
         res.send(error)
-    }
-}
-
-
-
-module.exports.updateUnfollowRequest = async (req, res, next) => {
-    try {
-        await Followers.findOneAndUpdate({ user: req.params.profileUserId }, {
-            $pull: {
-                followers: { _id: req.body.followingUserId }
-            }
-        })
-        await Following.findOneAndUpdate({ user: req.body.followingUserId }, {
-            $pull: {
-                following: { _id: req.params.profileUserId }
-            }
-        })
-        res.status(200).send("unfollowed")
-    } catch (error) {
-        res.send(error)
-    }
-}
-
-
-
-module.exports.updateFollowRequest = async (req, res, next) => {
-    try {
-        await Followers.findOneAndUpdate({ user: req.params.profileUserId }, {
-            $push: {
-                followers: [{ _id: req.body.followingUserId }]
-            }
-        })
-        await Following.findOneAndUpdate({ user: req.body.followingUserId }, {
-            $push: {
-                following: [{ _id: req.params.profileUserId }]
-            }
-        })
-        return res.status(200).send("followed")
-    } catch (error) {
-        return res.send(error)
     }
 }
 
@@ -217,5 +226,7 @@ module.exports.getUserDisplayImgs = async (req, res) => {
     // const result = await ProfileImg.findOne({ "user.username": req.params.username })
     return res.status(200).send(userProfile)
 }
+
+
 
 

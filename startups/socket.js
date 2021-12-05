@@ -1,8 +1,9 @@
 const jwt = require('jwt-simple');
 const { verifyJwt } = require('../controllers/authControllers');
-const { getTimelinePost, getUserPost } = require('../controllers/postControllers');
-const { UserDisplayImgsByUsername, getFollowersByusername, getUserByUsername } = require('../controllers/userControllers');
+const { getTimelinePost, getUserPost, postByUsername } = require('../controllers/postControllers');
+const { UserDisplayImgsByUsername, getFollowersByusername, getFollowingByusername, getUserByUsernameSocket, updateFollowRequest, updateUnfollowRequest } = require('../controllers/userControllers');
 const { createGroups, updateMessage, retriveGroups } = require('../controllers/userSocket');
+const Notification = require('../models/notification')
 
 module.exports = function (io) {
 
@@ -16,31 +17,31 @@ module.exports = function (io) {
             socket.join(id)
             console.log(id);
             user = await verifyJwt(token)
+            console.log("jwt verified");
             if (!user) {
                 console.log("disconnect");
                 io.in(id).disconnectSockets();
                 return Error(new Error('Not authorised.'));
             }
 
+            async function emitLoggeduser() {
+                const loggedinuser = await getUserDetailsByUsername(socket, username)
+                console.log("emit looged in user");
+                socket.emit('receive-logged-user', loggedinuser)
+            }
+            emitLoggeduser()
         }
-
-        getUserDetailsByUsername(socket, username).then(user => {
-            socket.emit('receive-logged-user', user)
-        })
-
-        // socket.on('first-conv', () => {
-        //     console.log("first conversation");
-        //     socket.emit("reseive-first conv", [{ postId: "12121212", name: "asdf" }, { postId: "12121212", name: "asdf" }])
-        // })
 
 
 
         socket.on('fetch-user', (username) => {
+            console.log("fetch users");
             getUserDetailsByUsername(socket, username).then(user => {
                 socket.emit('receive-user', user)
             })
         })
         socket.on('get-timeline', async ({ pageNumber, limit }) => {
+            console.log("get timeline");
             const posts = await getTimelinePost(id, pageNumber, limit)
             socket.emit("receive-timeline", posts)
         })
@@ -87,6 +88,40 @@ module.exports = function (io) {
 
         })
 
+        socket.on('post-feed', async ({ files, fileNames, postId, caption }) => {
+            const post = await postByUsername(files, fileNames, postId, caption, username)
+            const followers = await getFollowersByusername(username)
+            followers.forEach(follower => {
+                const id = follower._id.toString()
+                socket.broadcast.to(id).emit('receive-post', post)
+                socket.broadcast.to(id).emit('receive-postnoti', { author: post.author, caption: post.caption, date: post.date })
+            })
+        })
+
+        socket.on('get-profileImg', async (username) => {
+            const displayImg = await UserDisplayImgsByUsername(username)
+            socket.emit('post-profileImg', displayImg)
+        })
+
+        socket.on('follow', async ({ profileUserId, followingUserId }) => {
+            await updateFollowRequest(profileUserId, followingUserId)
+            const notification = {
+                user: { _id: user._id, username: user.username, fullName: user.fullName },
+                message: `${user.fullName} @${user.username} followed you.`,
+                date: new Date()
+            }
+            // const not = await Notification.findOne(user._id  )
+            // console.log(not, profileUserId);
+            await Notification.findOneAndUpdate({ "user._id": profileUserId }, {
+                $push: {
+                    notification: [notification]
+                }
+            })
+            socket.broadcast.to(profileUserId).emit('follower-added', notification)
+        })
+        socket.on('unfollow', async ({ profileUserId, followingUserId }) => {
+            await updateUnfollowRequest(profileUserId, followingUserId)
+        })
     })
 };
 
@@ -94,8 +129,8 @@ module.exports = function (io) {
 const getUserDetailsByUsername = async (socket, rusername) => {
     const { displayImg } = await UserDisplayImgsByUsername(rusername)
     const followers = await getFollowersByusername(rusername)
-    const following = await getFollowersByusername(rusername)
-    const { _id, fullName, username, private } = await getUserByUsername(rusername)
+    const following = await getFollowingByusername(rusername)
+    const { _id, fullName, username, private } = await getUserByUsernameSocket(rusername)
 
     return { _id, fullName, username, private, followers, following, displayImg }
 }

@@ -1,6 +1,6 @@
 const jwt = require('jwt-simple');
 const { verifyJwt } = require('../controllers/authControllers');
-const { getTimelinePost, getUserPost, postByUsername } = require('../controllers/postControllers');
+const { getTimelinePost, getUserPost, postByUsername, addCommentToPost, togglelike } = require('../controllers/postControllers');
 const { UserDisplayImgsByUsername, getFollowersByusername, getFollowingByusername, getUserByUsernameSocket, updateFollowRequest, updateUnfollowRequest } = require('../controllers/userControllers');
 const { createGroups, updateMessage, retriveGroups } = require('../controllers/userSocket');
 const Notification = require('../models/notification')
@@ -40,16 +40,6 @@ module.exports = function (io) {
                 socket.emit('receive-user', user)
             })
         })
-        socket.on('get-timeline', async ({ pageNumber, limit }) => {
-            console.log("get timeline");
-            const posts = await getTimelinePost(id, pageNumber, limit)
-            socket.emit("receive-timeline", posts)
-        })
-
-        socket.on('get-profile-post', async ({ username, pageNumber, limit }) => {
-            const posts = await getUserPost(username, pageNumber, limit)
-            socket.emit("receive-profile-post", { posts, username })
-        })
 
         socket.on('get-groups', async () => {
             const groups = await retriveGroups(id)
@@ -88,6 +78,11 @@ module.exports = function (io) {
 
         })
 
+        socket.on('add-comment', async ({postId, comment}) => {
+            console.log("add-comment");
+            await addCommentToPost(postId, comment)
+        })
+
         socket.on('post-feed', async ({ files, fileNames, postId, caption }) => {
             const post = await postByUsername(files, fileNames, postId, caption, username)
             const followers = await getFollowersByusername(username)
@@ -103,6 +98,11 @@ module.exports = function (io) {
             socket.emit('post-profileImg', displayImg)
         })
 
+        socket.on('toggle-like', async({liked, postId, userId}) => {
+            console.log(liked, postId, userId);
+            await togglelike(liked, postId, userId)            
+        })
+
         socket.on('follow', async ({ profileUserId, followingUserId }) => {
             await updateFollowRequest(profileUserId, followingUserId)
             const notification = {
@@ -110,8 +110,6 @@ module.exports = function (io) {
                 message: `${user.fullName} @${user.username} followed you.`,
                 date: new Date()
             }
-            // const not = await Notification.findOne(user._id  )
-            // console.log(not, profileUserId);
             await Notification.findOneAndUpdate({ "user._id": profileUserId }, {
                 $push: {
                     notification: [notification]
@@ -119,6 +117,7 @@ module.exports = function (io) {
             })
             socket.broadcast.to(profileUserId).emit('follower-added', notification)
         })
+
         socket.on('unfollow', async ({ profileUserId, followingUserId }) => {
             await updateUnfollowRequest(profileUserId, followingUserId)
         })

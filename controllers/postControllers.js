@@ -26,23 +26,10 @@ module.exports.retrivePostByUserId = async (req, res, next) => {
         res.send(error)
     }
 }
-
-/****socket **************************************************************/
-module.exports.postByUsername = async (files, fileNames, postId, caption, username) => {
-    try {
-        const post = new Post({
-            _id: postId, files: files, fileNames: fileNames, fileNumber: files.length, caption: caption, author: username
-            , comments: []
-        });
-
-        await post.save();
-        return post
-    } catch (err) {
-        console.log(err);
-        return "unable to create post"
-    }
-}
-module.exports.getTimelinePost = async (id, pageNumber, limit) => {
+module.exports.getTimelinePost = async (req, res) => {
+    const {userId: id} = req.params 
+    const pageNumber = parseInt(req.query.page)
+    const limit = parseInt(req.query.limit)
     const { following } = await Following.findOne({ user: id })
     following.push({ _id: id })
     const resultArray = following.map(async (item) => {
@@ -59,8 +46,8 @@ module.exports.getTimelinePost = async (id, pageNumber, limit) => {
 
     let results = {}
     results.pageNumber = pageNumber
-
-    if (endIndex < await Post.countDocuments().exec()) {
+    console.log(await Post.countDocuments({ author: { $in: followings }}).exec());
+    if (endIndex < await Post.countDocuments({ author: { $in: followings }}).exec()) {
         results.hasMore = true
     } else {
         results.hasMore = false
@@ -69,13 +56,60 @@ module.exports.getTimelinePost = async (id, pageNumber, limit) => {
         const postArr = await Post.find({ author: { $in: followings } }).sort([['date', -1]]).limit(limit).skip(startIndex).exec()
         results.result = postArr
 
-        return results
+        return res.status(200).send( results)
     }
     catch (e) {
-        return { message: e.message }
+        return res.status(400).send(e.message )
     }
 }
+/****socket **************************************************************/
+module.exports.postByUsername = async (files, fileNames, postId, caption, username) => {
+    try {
+        const post = new Post({
+            _id: postId, files: files, fileNames: fileNames, fileNumber: files.length, caption: caption, author: username
+            , comments: []
+        });
 
+        await post.save();
+        return post
+    } catch (err) {
+        console.log(err);
+        return "unable to create post"
+    }
+}
+// module.exports.getTimelinePost = async (id, pageNumber, limit) => {
+//     const { following } = await Following.findOne({ user: id })
+//     following.push({ _id: id })
+//     const resultArray = following.map(async (item) => {
+//         const result = await User.findById(item._id)
+//         if (!result) {
+//             return
+//         }
+//         return result.username
+//     })
+//     const followings = await Promise.all(resultArray);
+
+//     const startIndex = (pageNumber - 1) * limit
+//     const endIndex = pageNumber * limit
+
+//     let results = {}
+//     results.pageNumber = pageNumber
+
+//     if (endIndex < await Post.countDocuments().exec()) {
+//         results.hasMore = true
+//     } else {
+//         results.hasMore = false
+//     }
+//     try {
+//         const postArr = await Post.find({ author: { $in: followings } }).sort([['date', -1]]).limit(limit).skip(startIndex).exec()
+//         results.result = postArr
+
+//         return results
+//     }
+//     catch (e) {
+//         return { message: e.message }
+//     }
+// }
 module.exports.getUserPost = async (username, pageNumber, limit) => {
 
     const startIndex = (pageNumber - 1) * limit
@@ -104,20 +138,57 @@ module.exports.getUserPost = async (username, pageNumber, limit) => {
         return error
     }
 }
+module.exports.togglelike = async (liked, postId, userId) => {
+    console.log(liked, postId, userId);
+    if(liked) {
+        await Post.findByIdAndUpdate(postId, {
+            $push: {
+                likes: userId
+            }
+        })
+    } else {
+        await Post.findByIdAndUpdate(postId, {
+            $pull: {
+                likes: userId
+            }
+        })
+    }
+}
 /********************************************************************* */
+
 module.exports.getPostById = async (req, res) => {
     const { postId } = req.params
     const file = await Post.findOne({ _id: postId })
     return res.send(file)
 }
 
+module.exports.addCommentToPost = async (postId, comment) => {
+    await Post.findByIdAndUpdate(postId, {
+        $push: {
+            comments: comment
+        }
+    })
+}
+
+module.exports.deleteComment = async (req, res) => {
+    const {postId, commentId} = req.params
+    await Post.findByIdAndUpdate(postId, {
+        $pull: {
+            comments: {
+                _id: commentId
+            }
+        }
+    })
+    return res.status(202).send("deleted comment")
+}
+
 module.exports.getUserPhotosByUsername = async (req, res, next) => {
     const page = parseInt(req.query.page)
     const limit = parseInt(req.query.limit)
-    const logginUserId = req.query.logginUserId
+
     const startIndex = (page - 1) * limit
     const endIndex = page * limit
-    let posts = []
+
     let results = {}
     if (endIndex < await Post.countDocuments().exec()) {
         results.next = {
@@ -133,7 +204,7 @@ module.exports.getUserPhotosByUsername = async (req, res, next) => {
         }
     }
     try {
-        const post = await Post.find({ author: req.params.username }, { files: 0 }).sort([['date', -1]]).limit(limit).skip(startIndex).exec()
+        const post = await Post.find({ author: req.params.username }).sort([['date', -1]]).limit(limit).skip(startIndex).exec()
 
         results.result = post
         return res.status(200).send(results)

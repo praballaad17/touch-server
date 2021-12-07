@@ -8,10 +8,15 @@ const {
     getUserPhotosByUsername,
     retrivePostByUserId,
     deletePostById,
-    getPostById
+    getPostById,
+    getTimelinePost,
+    deleteComment
 } = require('../controllers/postControllers');
+
 const Post = require("../models/post");
 
+router.delete('/delete-comment/:postId/:commentId', requireAuth, deleteComment)
+router.get('/get-timeline-post/:userId', requireAuth, getTimelinePost)
 router.get('/posts/:postId', requireAuth, getPostById);
 router.post('/:username', requireAuth, postByUsername);
 router.get('/userId/:userId', requireAuth, requireAuth, retrivePostByUserId);

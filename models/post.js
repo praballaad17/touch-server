@@ -22,6 +22,7 @@ const PostSchema = new Schema({
         type: String,
         ref: 'User',
     },
+    likes: Array
 
 });
 

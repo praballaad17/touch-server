@@ -17,13 +17,12 @@ const {
     validateUsername,
     validatePassword,
 } = require('../utils/validation');
+const Notification = require('../models/notification');
 
 module.exports.verifyJwt = (token) => {
     return new Promise(async (resolve, reject) => {
         try {
-            console.log(token, jwt.decode(token, process.env.JWT_SECRET));
             const id = jwt.decode(token, process.env.JWT_SECRET).id;
-            console.log(id);
             const user = await User.findOne(
                 { _id: id },
                 'email username avatar bookmarks bio fullName confirmed website'
@@ -40,10 +39,10 @@ module.exports.verifyJwt = (token) => {
 };
 
 module.exports.requireAuth = async (req, res, next) => {
-    const { authorization } = req.headers;
-    if (!authorization) return res.status(401).send({ error: 'Not authorized.' });
+    const { token } = req.headers;
+    if (!token) return res.status(401).send({ error: 'Not authorized.' });
     try {
-        const user = await this.verifyJwt(authorization);
+        const user = await this.verifyJwt(token);
         // Allow other middlewares to access the authenticated user details.
         res.locals.user = user;
         return next();
@@ -67,19 +66,21 @@ module.exports.optionalAuth = async (req, res, next) => {
 };
 
 module.exports.loginAuthentication = async (req, res, next) => {
-    const { authorization } = req.headers;
+    // const { token } = req.headers;
     const { usernameOrEmail, password } = req.body;
-    if (authorization) {
-        try {
-            const user = await this.verifyJwt(authorization);
-            return res.send({
-                user,
-                token: authorization,
-            });
-        } catch (err) {
-            return res.status(401).send({ error: err });
-        }
-    }
+    // console.log(usernameOrEmail, password, token);
+    // if (token) {
+    //     try {
+    //         const user = await this.verifyJwt(token);
+    //         return res.send({
+    //             user,
+    //             token: token,
+    //         });
+    //     } catch (err) {
+    //         console.log(err);
+    //         return res.status(401).send({ error: err });
+    //     }
+    // }
 
     if (!usernameOrEmail || !password) {
         return res
@@ -146,15 +147,19 @@ module.exports.register = async (req, res, next) => {
         });
         if (document) return res.status(400).send('Username or email already register')
         user = new User({ username, fullName, email, password });
-        confirmationToken = new ConfirmationToken({
-            user: user._id,
-            token: crypto.randomBytes(20).toString('hex'),
-        });
+        // confirmationToken = new ConfirmationToken({
+        //     user: user._id,
+        //     token: crypto.randomBytes(20).toString('hex'),
+        // });
         const followers = new Followers({ user: user._id, followers: [] })
         const following = new Following({
             user: user._id, following: [
-                { _id: "61115fb24b64ee0022c2282d" }
+                { _id: "619b52b3af4aa90023635dea" }
             ]
+        })
+        const notification = new Notification({
+            user: { _id: user._id, username: username, fullName: fullName },
+            notification: []
         })
         const displayImg = await profileImg({
             user: {
@@ -167,10 +172,11 @@ module.exports.register = async (req, res, next) => {
             }
         })
         await user.save();
-        await confirmationToken.save();
+        // await confirmationToken.save();
         await followers.save();
         await following.save();
         await displayImg.save()
+        await notification.save();
         res.status(201).send({
             user: {
                 email: user.email,

@@ -1,4 +1,5 @@
 const express = require("express");
+const { requireAuth } = require("../controllers/authControllers");
 const router = express.Router();
 
 const {
@@ -6,15 +7,20 @@ const {
     retrivePostByUsername,
     getUserPhotosByUsername,
     retrivePostByUserId,
-    getTimelinePosts,
-    deletePostById
+    deletePostById,
+    getPostById,
+    getTimelinePost,
+    deleteComment
 } = require('../controllers/postControllers');
+
 const Post = require("../models/post");
 
-router.get('/all-posts/:userId', getTimelinePosts);
-router.post('/:username', postByUsername);
-router.get('/userId/:userId', retrivePostByUserId);
-router.get('/:username', retrivePostByUsername);
-router.get('/user-posts/:username', getUserPhotosByUsername);
-router.delete('/delete/:postId', deletePostById);
+router.delete('/delete-comment/:postId/:commentId', requireAuth, deleteComment)
+router.get('/get-timeline-post/:userId', requireAuth, getTimelinePost)
+router.get('/posts/:postId', requireAuth, getPostById);
+router.post('/:username', requireAuth, postByUsername);
+router.get('/userId/:userId', requireAuth, requireAuth, retrivePostByUserId);
+router.get('/:username', requireAuth, retrivePostByUsername);
+router.get('/user-posts/:username', requireAuth, getUserPhotosByUsername);
+router.delete('/delete/:postId', requireAuth, deletePostById);
 module.exports = router;

@@ -1,4 +1,5 @@
 const express = require("express");
+const { requireAuth } = require("../controllers/authControllers");
 const router = express.Router();
 
 const {
@@ -15,15 +16,15 @@ const {
 } = require('../controllers/userControllers');
 
 router.get('/search/:usernameOrname', searchUser)
-router.get('/display-imgs/:username', getUserDisplayImgs)
+router.get('/display-imgs/:username', requireAuth, getUserDisplayImgs)
 router.get('/username/:usernameOrEmail', getUserByUsername)
-router.get('/username/followers/:username', getusersFollowers)
-router.get('/username/following/:username', getusersFollowing)
-router.put('/follow/:profileUserId', updateFollowRequest)
-router.put('/unfollow/:profileUserId', updateUnfollowRequest)
-router.get('/userId/followers/:profileUserId', getusersFollowersById)
-router.put('/profile-img/:username', updateProfileImg)
-router.delete('/profile-img/:username', removeProfileImg)
+router.get('/username/followers/:username', requireAuth, getusersFollowers)
+router.get('/username/following/:username', requireAuth, getusersFollowing)
+router.put('/follow/:profileUserId', requireAuth, updateFollowRequest)
+router.put('/unfollow/:profileUserId', requireAuth, updateUnfollowRequest)
+router.get('/userId/followers/:profileUserId', requireAuth, getusersFollowersById)
+router.put('/profile-img/:username', requireAuth, updateProfileImg)
+router.delete('/profile-img/:username', requireAuth, removeProfileImg)
 
 
 module.exports = router;

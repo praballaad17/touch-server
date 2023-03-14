@@ -2,9 +2,12 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const PostSchema = new Schema({
+    _id: String,
     files: Array,
-    thumbnail: String,
+    fileNumber: Number,
+    fileNames: Array,
     caption: String,
+    comments: Array,
     hashtags: [
         {
             type: String,
@@ -19,6 +22,8 @@ const PostSchema = new Schema({
         type: String,
         ref: 'User',
     },
+    likes: Array
+
 });
 
 // PostSchema.pre('deleteOne', async function (next) {
